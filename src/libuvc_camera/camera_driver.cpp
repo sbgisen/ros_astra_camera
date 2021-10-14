@@ -56,7 +56,8 @@ CameraDriver::CameraDriver(ros::NodeHandle nh, ros::NodeHandle priv_nh)
     it_(nh_),
     config_server_(mutex_, priv_nh_),
     config_changed_(false),
-    cinfo_manager_(nh) {
+    cinfo_manager_(nh),
+    param_init_(false) {
   cam_pub_ = it_.advertiseCamera("image_raw", 1, false);
   ns = ros::this_node::getNamespace();
   device_type_client = nh_.serviceClient<astra_camera::GetDeviceType>(ns + "/get_device_type");
@@ -121,7 +122,7 @@ bool CameraDriver::getUVCGainCb(astra_camera::GetUVCGainRequest& req, astra_came
   uint16_t gain;
   uvc_error_t err = uvc_get_gain(devh_, &gain, UVC_GET_CUR);
   res.gain = gain;
-  return (err == UVC_SUCCESS);
+  return (err == UVC_SUCCESS); 
 }
 
 bool CameraDriver::setUVCGainCb(astra_camera::SetUVCGainRequest& req, astra_camera::SetUVCGainResponse& res)
@@ -209,18 +210,18 @@ void CameraDriver::ReconfigureCallback(UVCCameraConfig &new_config, uint32_t lev
       }                                                                 \
     }
 
-    PARAM_INT(scanning_mode, scanning_mode, new_config.scanning_mode);
-    PARAM_INT(auto_exposure, ae_mode, 1 << new_config.auto_exposure);
+    //PARAM_INT(scanning_mode, scanning_mode, new_config.scanning_mode);
+    //PARAM_INT(auto_exposure, ae_mode, 1 << new_config.auto_exposure);
     PARAM_INT(auto_exposure_priority, ae_priority, new_config.auto_exposure_priority);
     PARAM_INT(exposure_absolute, exposure_abs, new_config.exposure_absolute * 10000);
-    PARAM_INT(auto_focus, focus_auto, new_config.auto_focus ? 1 : 0);
-    PARAM_INT(focus_absolute, focus_abs, new_config.focus_absolute);
+    //PARAM_INT(auto_focus, focus_auto, new_config.auto_focus ? 1 : 0);
+    //PARAM_INT(focus_absolute, focus_abs, new_config.focus_absolute);
 #if libuvc_VERSION     > 00005 /* version > 0.0.5 */
     PARAM_INT(gain, gain, new_config.gain);
-    PARAM_INT(iris_absolute, iris_abs, new_config.iris_absolute);
+    //PARAM_INT(iris_absolute, iris_abs, new_config.iris_absolute);
     PARAM_INT(brightness, brightness, new_config.brightness);
 #endif
-
+    
 
     if (new_config.pan_absolute != config_.pan_absolute || new_config.tilt_absolute != config_.tilt_absolute) {
       if (uvc_set_pantilt_abs(devh_, new_config.pan_absolute, new_config.tilt_absolute)) {
@@ -433,7 +434,7 @@ void CameraDriver::AutoControlsCallback(
       switch (selector) {
       case UVC_PU_WHITE_BALANCE_TEMPERATURE_CONTROL:
         uint8_t *data_char = (uint8_t*) data;
-        config_.white_balance_temperature =
+        config_.white_balance_temperature = 
           data_char[0] | (data_char[1] << 8);
         config_changed_ = true;
         break;
